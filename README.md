@@ -1,4 +1,16 @@
-# High Speed and High Dynamic Range Video with an Event Camera
+# IIT - EDPR minimally modifies "High Speed and High Dynamic Range Video with an Event Camera"
+
+A fork of: https://github.com/uzh-rpg/rpg_e2vid
+
+... with the only change that instead of reading from a .txt/.zip file, it uses BIMVEE library to import data, so you can use it with any event camera data that BIMVEE can import, namely: yarp .log, secdvs .bin files, and .bags recorded with rpg_dvs_ros.
+
+Use the following instructions; the only additions are:
+
+1) When you set up your environment you need to do ```conda install scipy ``` (an ommission in the original instructions).
+2) Also do ```pip install bimvee```
+3) If the file gets imported with more than one channel, then you need to specify the channel name where the events are, using the parameter ```--channelName```
+
+Note that instead of reading the data from the file on the fly, the data is fully loaded into memory before running the reconstruction, so there may be a delay at the beginning as this happens.
 
 [![High Speed and High Dynamic Range Video with an Event Camera](http://rpg.ifi.uzh.ch/E2VID/video_thumbnail.png)](https://youtu.be/eomALySSGVU)
 

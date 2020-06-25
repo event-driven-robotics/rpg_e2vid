@@ -9,6 +9,7 @@ from utils.timers import Timer
 import time
 from image_reconstructor import ImageReconstructor
 from options.inference_options import set_inference_options
+from bimvee.importAe import importAe
 
 
 if __name__ == "__main__":
@@ -30,20 +31,12 @@ if __name__ == "__main__":
     parser.add_argument('--skipevents', default=0, type=int)
     parser.add_argument('--suboffset', default=0, type=int)
     parser.add_argument('--compute_voxel_grid_on_cpu', dest='compute_voxel_grid_on_cpu', action='store_true')
+    parser.add_argument('--channelName', default=None, type=str)
     parser.set_defaults(compute_voxel_grid_on_cpu=False)
 
     set_inference_options(parser)
 
     args = parser.parse_args()
-
-    # Read sensor size from the first first line of the event file
-    path_to_events = args.input_file
-
-    header = pd.read_csv(path_to_events, delim_whitespace=True, header=None, names=['width', 'height'],
-                         dtype={'width': np.int, 'height': np.int},
-                         nrows=1)
-    width, height = header.values[0]
-    print('Sensor size: {} x {}'.format(width, height))
 
     # Load model
     model = load_model(args.path_to_model)
@@ -52,7 +45,19 @@ if __name__ == "__main__":
     model = model.to(device)
     model.eval()
 
+    path_to_events = args.input_file
+
+    container = importAe(filePathOrName=path_to_events)
+    channelName = args.channelName
+    if channelName is None:
+        channelName = (list(container['data'].keys()))[0]
+    dvs = container['data'][channelName]['dvs']
+    width = dvs.get('dimX', np.max(dvs['x']) + 1)
+    height = dvs.get('dimY', np.max(dvs['y']) + 1)
+
+
     reconstructor = ImageReconstructor(model, height, width, model.num_bins, args)
+
 
     """ Read chunks of events using Pandas """
 
@@ -81,11 +86,14 @@ if __name__ == "__main__":
         print('Will compute voxel grid on CPU.')
 
     if args.fixed_duration:
-        event_window_iterator = FixedDurationEventReader(path_to_events,
+        event_window_iterator = FixedDurationEventReader(dvs,
                                                          duration_ms=args.window_duration,
                                                          start_index=start_index)
     else:
-        event_window_iterator = FixedSizeEventReader(path_to_events, num_events=N, start_index=start_index)
+        event_window_iterator = FixedSizeEventReader(dvs, num_events=N, start_index=start_index)
+
+
+    print('Sensor size: {} x {}'.format(width, height))
 
     with Timer('Processing entire dataset'):
         for event_window in event_window_iterator:
