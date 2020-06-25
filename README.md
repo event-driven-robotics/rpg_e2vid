@@ -1,10 +1,8 @@
 # IIT - EDPR minimally modifies "High Speed and High Dynamic Range Video with an Event Camera"
 
-A fork of: https://github.com/uzh-rpg/rpg_e2vid
+A fork of https://github.com/uzh-rpg/rpg_e2vid with the only change that instead of reading from a .txt/.zip file, it uses BIMVEE library to import data, so you can use it with any event camera data that BIMVEE can import, namely: yarp .log, secdvs .bin files, and .bags recorded with rpg_dvs_ros.
 
-... with the only change that instead of reading from a .txt/.zip file, it uses BIMVEE library to import data, so you can use it with any event camera data that BIMVEE can import, namely: yarp .log, secdvs .bin files, and .bags recorded with rpg_dvs_ros.
-
-Use the following instructions; the only additions are:
+Use the instructions in the following section; the only additions are:
 
 1) When you set up your environment you need to do ```conda install scipy ``` (an ommission in the original instructions).
 2) Also do ```pip install bimvee```
