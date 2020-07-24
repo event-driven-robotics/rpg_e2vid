@@ -1,24 +1,27 @@
+# Standard packages
 import torch
-from utils.loading_utils import load_model, get_device
 import numpy as np
 import argparse
-import pandas as pd
+
+# bimvee, e.g. pip install bimvee
+from bimvee.importAe import importAe
+from bimvee.container import Container
+
+# local imports
+from utils.loading_utils import load_model, get_device
 from utils.event_readers import FixedSizeEventReader, FixedDurationEventReader
 from utils.inference_utils import events_to_voxel_grid, events_to_voxel_grid_pytorch
 from utils.timers import Timer
-import time
 from image_reconstructor import ImageReconstructor
 from options.inference_options import set_inference_options
-from bimvee.importAe import importAe
-
-
-if __name__ == "__main__":
+    
+def run_reconstruction(**kwargs):
 
     parser = argparse.ArgumentParser(
         description='Evaluating a trained network')
-    parser.add_argument('-c', '--path_to_model', required=True, type=str,
+    parser.add_argument('-c', '--path_to_model', type=str,
                         help='path to model weights')
-    parser.add_argument('-i', '--input_file', required=True, type=str)
+    parser.add_argument('-i', '--input_file', type=str)
     parser.add_argument('--fixed_duration', dest='fixed_duration', action='store_true')
     parser.set_defaults(fixed_duration=False)
     parser.add_argument('-N', '--window_size', default=None, type=int,
@@ -38,6 +41,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    argsDict = vars(args)
+    argsDict.update(kwargs)
+
     # Load model
     model = load_model(args.path_to_model)
     device = get_device(args.use_gpu)
@@ -49,15 +55,18 @@ if __name__ == "__main__":
 
     container = importAe(filePathOrName=path_to_events)
     channelName = args.channelName
-    if channelName is None:
-        channelName = (list(container['data'].keys()))[0]
-    dvs = container['data'][channelName]['dvs']
+    if channelName is not None:
+        dvs = container['data'][channelName]['dvs']
+    else: # use Container functionality to find the right channel
+        containerObj = Container(container) 
+        dvs = containerObj.getDataType('dvs')
     width = dvs.get('dimX', np.max(dvs['x']) + 1)
     height = dvs.get('dimY', np.max(dvs['y']) + 1)
 
 
     reconstructor = ImageReconstructor(model, height, width, model.num_bins, args)
 
+    
 
     """ Read chunks of events using Pandas """
 
@@ -118,3 +127,6 @@ if __name__ == "__main__":
             reconstructor.update_reconstruction(event_tensor, start_index + num_events_in_window, last_timestamp)
 
             start_index += num_events_in_window
+
+if __name__ == "__main__":
+    run_reconstruction()
