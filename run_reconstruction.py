@@ -53,7 +53,7 @@ def run_reconstruction(**kwargs):
 
     path_to_events = args.input_file
 
-    container = importAe(filePathOrName=path_to_events)
+    container = importAe(filePathOrName=path_to_events, **kwargs)
     channelName = args.channelName
     if channelName is not None:
         dvs = container['data'][channelName]['dvs']
